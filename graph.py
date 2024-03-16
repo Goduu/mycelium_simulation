@@ -9,20 +9,22 @@ import networkx as nx
 Position = namedtuple("Position", ["x", "y"])
 
 class DecayingSignal:
-    def __init__(self, target: uuid, priority: int) -> None:
+    def __init__(self, target: uuid, priority: int, max_range: int) -> None:
         self.id = str(uuid.uuid4())
         self.target = target
         self.priority = priority # prioritize the spores with more connections
+        self.max_range = max_range
         self.passing_through: List[str] = [target]
     
     def get_priority(self):
         return self.priority
 
 class EnergySignal:
-     def __init__(self, target: uuid, energy: int, passing_through: List[str]) -> None:
+     def __init__(self, target: uuid, energy: int, passing_through: List[str], decaying_signal_ref: str) -> None:
         self.target  = target
         self.energy = energy
         self.passing_through = passing_through
+        self.decaying_signal_ref = decaying_signal_ref
 
             
 class Spore:
@@ -31,8 +33,7 @@ class Spore:
         self.type = "spore"
         self.position = Position(x, y)
         self.energy = energy
-        self.energy_decomposition_rate = random.randint(6, 24)
-        self.linked_to: Set[Substrate | Spore] = set()
+        self.energy_decomposition_rate = random.randint(15, 50)
         self.energy_cost_to_multiply = 6
         self.state = "alive"
         self.passing_signals: List[DecayingSignal] = []
@@ -43,6 +44,12 @@ class Spore:
             for key, value in d.items():
                 setattr(spore, key, value)
         return spore
+    
+    def remove_decaying_signal(self, signal_id: str):
+        self.passing_signals = [signal for signal in self.passing_signals if signal.id != signal_id]
+    
+    def get_signal_max_range(self):
+        return 6 - self.energy + 2
 
     def __eq__(self, other: object) -> bool:
         return self.id == other.id
@@ -85,6 +92,18 @@ class Mycelium:
         for spore in self.spores:
             self.graph.add_node(spore.id, **vars(spore))
             self.link_close_spores(spore)
+            
+    def decide_multiply_direction(self, spore: Spore):
+        # Get the positions of all linked spores
+        linked_spores = self.get_linked_spores(spore)
+        if not linked_spores or random.random() > 0.7:
+            new_x = spore.position.x + random.uniform(-2.5, 2.5)
+            new_y = spore.position.y + random.uniform(-2.5, 2.5)
+        else: 
+            new_x = sum([spore.position.x for spore in linked_spores]) // len(linked_spores)
+            new_y = sum([spore.position.y for spore in linked_spores]) // len(linked_spores)
+        # Return the new position as a Position object
+        return Position(new_x, new_y)
     
     def get_spore_by_id(self, id: str) -> Spore:
         for spore in self.spores:
@@ -125,29 +144,28 @@ class Mycelium:
                 spore.energy += energy_drained
                 
     def pass_decaying_signal(self, spore: Spore, signal: DecayingSignal):
-        print('passing decaying_signal',spore.id)
         spore.passing_signals.append(signal)
         signal_copy = copy.deepcopy(signal)
         
         for linked_spore in self.get_linked_spores(spore):
             if linked_spore.id not in signal_copy.passing_through:
                 signal_copy.passing_through.append(linked_spore.id)
-                self.pass_decaying_signal(linked_spore, signal_copy)
+                if signal_copy.max_range > len(signal_copy.passing_through):
+                    self.pass_decaying_signal(linked_spore, signal_copy)
             
     def pass_energy(self, spore: Spore, energy_signal: EnergySignal):
-        print('passing energy')
         if energy_signal.target == spore.id:
             spore.energy += energy_signal.energy
-            spore.state = "xongas"
-        else:
-            for linked_spore in self.get_linked_spores(spore):
-                print('passing through', energy_signal.passing_through)
-                if linked_spore.id == energy_signal.passing_through[-1]:
-                    energy_signal.passing_through.pop()
-                    self.pass_energy(linked_spore, energy_signal)
+            pass
+        elif len(energy_signal.passing_through) > 0:
+            next_in_line = self.get_spore_by_id(energy_signal.passing_through[-1])
+            spore.remove_decaying_signal(energy_signal.decaying_signal_ref)
+            if next_in_line is not None:
+                energy_signal.passing_through.pop()
+                self.pass_energy(next_in_line, energy_signal)
+            
                     
     def kill_spore(self, spore: Spore):
-        print('killing spore')
         spore.state = "dead"
         for linked in self.get_linked_spores(spore):
             if spore in self.get_linked_spores(linked):
@@ -160,14 +178,19 @@ class Mycelium:
     def multiply_spores(self):
         for spore in self.get_spores():
             if spore.energy >= spore.energy_cost_to_multiply and random.random() > 0.6:
-                new_spore = Spore(spore.position.x + random.uniform(-1.5, 1.5),
-                                  spore.position.y + random.uniform(-1.5, 1.5),
-                                  spore.energy_cost_to_multiply
+                if random.random() > 0.3:
+                    new_spore_positions = self.decide_multiply_direction(spore)
+                else:
+                    new_x = spore.position.x + random.uniform(-1.5, 1.5)
+                    new_y = spore.position.y + random.uniform(-1.5, 1.5)
+                    new_spore_positions = Position(new_x, new_y)
+                new_spore = Spore(new_spore_positions.x,new_spore_positions.y,
+                                  spore.energy / 2
                                   )
                 self.spores.append(new_spore)
                 self.graph.add_node(new_spore.id, **vars(new_spore))
                 self.graph.add_edge(spore.id, new_spore.id)
-                spore.energy -= spore.energy_cost_to_multiply
+                spore.energy -= spore.energy / 2
                 self.link_close_spores(new_spore)
     
     def link_close_spores(self, new_spore: Spore):
@@ -199,14 +222,15 @@ class Mycelium:
             return hash(self.id)
 
     
-    def plot_mycelium_as_graph(self):
+    def plot_mycelium(self):
 
-        # Set node positions based on spore positions
+        # Set node positions based on spore and substrate positions
         pos = {node: data['position'] for node, data in self.graph.nodes(data=True)}
-        # Set node colors based on spore state
+
+        # Set node colors based on spore and substrate state
         node_colors = ['green' if 'state' in data and data['state'] == 'alive' else 'red' for _, data in self.graph.nodes(data=True)]
 
-        # Set node sizes based on spore energy
+        # Set node sizes based on spore and substrate energy
         node_sizes = [data['energy'] for _, data in self.graph.nodes(data=True)]
 
         # Draw the graph
@@ -214,28 +238,24 @@ class Mycelium:
 
         # Show the plot
         plt.show()
-        
-
 
 def manhattan_distance(pos1, pos2):
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
 def check_decaying_state(spore: Spore, mycelium: Mycelium):
     if spore.state == "decaying":
-        signal = DecayingSignal(spore.id, len(mycelium.get_linked_spores(spore)))
+        signal = DecayingSignal(spore.id, len(mycelium.get_linked_spores(spore)), spore.get_signal_max_range())
         mycelium.pass_decaying_signal(spore, signal)
     elif spore.energy < spore.energy_cost_to_multiply:
         spore.enter_in_decay_state()
         
         
 def decide_donate_energy(spore: Spore, mycelium: Mycelium):
-    print("in decide_donate_energy",spore.energy)
     if spore.energy > spore.energy_cost_to_multiply * 2:
-        print('--------------------------')
         higher_priority_signal = max(spore.passing_signals, key=DecayingSignal.get_priority)
         if random.random() < higher_priority_signal.get_priority() * 0.25:
             signal = higher_priority_signal
-            energy_signal = EnergySignal(signal.target, spore.energy_cost_to_multiply, signal.passing_through)
+            energy_signal = EnergySignal(signal.target, spore.energy_cost_to_multiply, signal.passing_through, higher_priority_signal.id)
             mycelium.pass_energy(spore, energy_signal)    
                 
 mycelium = Mycelium()
@@ -249,10 +269,5 @@ for _ in range(steps):
         if len(spore.passing_signals) > 0:
             decide_donate_energy(spore, mycelium)
     mycelium.multiply_spores()
-    # make a plot visualization of the mycelium
-    print(len(mycelium.get_spores()))
-mycelium.plot_mycelium_as_graph()
-
-# for spore in mycelium.spores:
-#     signal = [signal.target for signal in spore.passing_signals]
-#     print(signal)
+    print(sum([spore.energy for spore in mycelium.get_substrates()]))
+    mycelium.plot_mycelium()
