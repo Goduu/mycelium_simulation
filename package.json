@@ -1,0 +1,52 @@
+{
+  "name": "nextjs-fastapi",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "fastapi-dev": "pip3 install -r requirements.txt && python3 -m uvicorn api.index:app --reload",
+    "next-dev": "next dev",
+    "dev": "concurrently \"npm run next-dev\" \"npm run fastapi-dev\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "analyze": "cross-env ANALYZE=true next build",
+    "generate": "openapi --input http://localhost:8000/openapi.json --output ./src/client --useOptions --useUnionTypes"
+  },
+  "dependencies": {
+    "aura-beam-annotator": "^0.7.5",
+    "autoprefixer": "10.4.17",
+    "axios": "^1.6.7",
+    "classnames": "^2.5.1",
+    "concurrently": "^8.2.2",
+    "d3": "^7.9.0",
+    "form-data": "^4.0.0",
+    "next": "14.1.0",
+    "postcss": "8.4.33",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tailwindcss": "3.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.6",
+    "@types/react": "18.2.53",
+    "@types/react-dom": "18.2.18",
+    "@types/websocket": "^1.0.10",
+    "cross-env": "^7.0.3",
+    "eslint": "8.56.0",
+    "eslint-config-next": "14.1.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "openapi-typescript-codegen": "^0.27.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-tailwindcss": "^0.4.1",
+    "typescript": "5.3.3"
+  },
+  "lint-staged": {
+    "*.+(js|jsx|ts|tsx)": [
+      "eslint --fix"
+    ],
+    "*.+(js|jsx|ts|tsx|json|css|md|mdx)": [
+      "prettier --write"
+    ]
+  }
+}

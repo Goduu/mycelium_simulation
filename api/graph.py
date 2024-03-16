@@ -190,26 +190,22 @@ class Mycelium:
                         propagate_signal(linked_spore)
 
         propagate_signal(spore)
-            
+    
     def pass_energy(self, spore: Spore, energy_signal: EnergySignal):
         energy_signal.passed += 1
-        print("in pass energy")
         if energy_signal.target == spore.id:
             if spore.state == "decaying":
-                print("got energy")
                 spore.energy += energy_signal.energy
                 spore.state = "alive"
             spore.remove_decaying_signal(energy_signal.decaying_signal_ref)
-        elif len(energy_signal.passing_through) > 0:
-            print("passing through")
+        elif energy_signal.passing_through:
             next_in_line = self.get_spore_by_id(energy_signal.passing_through[-1])
             spore.remove_decaying_signal(energy_signal.decaying_signal_ref)
-            if next_in_line is not None:
+            if next_in_line:
                 energy_signal.passing_through.pop()
                 if(energy_signal.passed < energy_signal.max_range):
                     self.pass_energy(next_in_line, energy_signal)
-            
-                    
+                
     def kill_spore(self, spore: Spore):
         spore.state = "dead"
         for linked in self.get_linked_spores(spore):
@@ -294,19 +290,23 @@ def decide_donate_energy(spore: Spore, mycelium: Mycelium):
             energy_signal = EnergySignal(signal.target, spore.energy_cost_to_multiply, signal.passing_through, higher_priority_signal.id)
             mycelium.pass_energy(spore, energy_signal)    
 
-initial_environment = Environment(initial_temperature, initial_humidity)
-mycelium = Mycelium(initial_environment)                 
-mycelium.initialize()
 
 
-for _ in range(steps):
-    for spore in mycelium.get_spores():
-        mycelium.consume_spore_energy(spore)
-        check_decaying_state(spore, mycelium)
-        if spore.energy <= 0:
-            mycelium.kill_spore(spore)
-        if len(spore.passing_signals) > 0:
-            decide_donate_energy(spore, mycelium)
-    mycelium.multiply_spores()
-    print(sum([spore.energy for spore in mycelium.get_substrates()]))
-    mycelium.plot_mycelium()
+def run_mycelium_simulation():
+    initial_environment = Environment(initial_temperature, initial_humidity)
+    mycelium = Mycelium(initial_environment)                 
+    mycelium.initialize()
+
+
+    for _ in range(steps):
+        for spore in mycelium.get_spores():
+            mycelium.consume_spore_energy(spore)
+            check_decaying_state(spore, mycelium)
+            if spore.energy <= 0:
+                mycelium.kill_spore(spore)
+            if len(spore.passing_signals) > 0:
+                decide_donate_energy(spore, mycelium)
+        mycelium.multiply_spores()
+        print(sum([spore.energy for spore in mycelium.get_substrates()]))
+    
+    return mycelium
