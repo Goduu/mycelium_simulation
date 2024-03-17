@@ -2,11 +2,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
-import asyncio
-from api.graph import run_mycelium_simulation
+from api.graph import process_mycelium_simulation, process_phase, process_start_phase
 from api.run_evolutionary_algorithm import run_evolutionary_algorithm
-from api.types import EvolutionaryInput, Item
-import json
+from api.types import EvolutionaryInput, Item, Node
 from typing import List
 
 app = FastAPI()
@@ -39,12 +37,11 @@ async def start_task(input: EvolutionaryInput):
 
 @app.get("/graph")
 async def get_graph():
-    mycelium = run_mycelium_simulation()
+    mycelium = process_mycelium_simulation()
     graph = mycelium.graph
     nodes = list(graph.nodes(data=True))
     edges = list(graph.edges())
     edges_list = []
-    print("edges:", edges)
     for edge in edges:
         edges_obj = {}
         source_pos = graph.nodes[edge[0]]['position']
@@ -58,9 +55,79 @@ async def get_graph():
             "id": node[1]["id"],
             "position": {"x": node[1]["position"][0], "y": node[1]["position"][1]},
             "type": node[1]["type"],
+            "energy": node[1]["energy"],
             } for node in nodes],
         "edges": edges_list,
         "data": {
             # "edge_attributes": {(str(edge[0]), str(edge[1])): dict(graph[edge[0]][edge[1]]) for edge in graph.edges}
         }
     }
+    
+@app.get("/start_phase")
+async def start_phase():
+    mycelium = process_start_phase()
+    graph = mycelium.graph
+    nodes = list(graph.nodes(data=True))
+    
+        
+    return {
+        "nodes": [{
+            "id": node[1]["id"],
+            "position": {"x": node[1]["position"][0], "y": node[1]["position"][1]},
+            "type": node[1]["type"],
+            "energy": node[1]["energy"],
+            } for node in nodes],
+       "edges": [],
+    }
+
+@app.post("/api/run_phase")
+async def run_phase(input: List[Node]):
+    mycelium = process_phase(input)
+    graph = mycelium.graph
+    nodes = list(graph.nodes(data=True))
+    edges = list(graph.edges())
+    edges_list = []
+    for edge in edges:
+        edges_obj = {}
+        source_pos = graph.nodes[edge[0]]['position']
+        target_pos = graph.nodes[edge[1]]['position']
+        edges_obj["source"] = {'x': source_pos[0], 'y': source_pos[1]}
+        edges_obj["target"] = {'x': target_pos[0], 'y': target_pos[1]}
+        edges_list.append(edges_obj)
+    
+    return {
+        "nodes": [{
+            "id": node[1]["id"],
+            "position": {"x": node[1]["position"][0], "y": node[1]["position"][1]},
+            "type": node[1]["type"],
+            "energy": node[1]["energy"],
+            } for node in nodes],
+        "edges": edges_list,
+    }
+    
+
+def format_nodes(mycelium):
+    graph = mycelium.graph
+    nodes = list(graph.nodes(data=True))
+
+    return [{
+            "id": node[1]["id"],
+            "position": {"x": node[1]["position"][0], "y": node[1]["position"][1]},
+            "type": node[1]["type"],
+            "energy": node[1]["energy"],
+            } for node in nodes],
+    
+def format_edges(mycelium):
+    graph = mycelium.graph
+    edges = list(graph.edges())
+    edges_list = []
+    
+    for edge in edges:
+        edges_obj = {}
+        source_pos = graph.nodes[edge[0]]['position']
+        target_pos = graph.nodes[edge[1]]['position']
+        edges_obj["source"] = {'x': source_pos[0], 'y': source_pos[1]}
+        edges_obj["target"] = {'x': target_pos[0], 'y': target_pos[1]}
+        edges_list.append(edges_obj)
+    
+    return edges_list,

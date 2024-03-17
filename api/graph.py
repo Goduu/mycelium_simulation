@@ -8,7 +8,7 @@ import copy
 import networkx as nx
 
 Position = namedtuple("Position", ["x", "y"])
-steps = 40
+steps = 30
 max_dist_to_link = 1.5
 initial_temperature = 20  # Initial temperature (in Celsius)
 initial_humidity = 70     # Initial humidity (in percentage)
@@ -68,11 +68,11 @@ class Spore:
         self.state = "decaying"
 
 class Substrate:
-    def __init__(self, x: int, y: int):
+    def __init__(self, x: int, y: int, energy=random.randint(24, 258)):
         self.id = str(uuid.uuid4())
         self.type = "substrate"
         self.position = Position(x, y)
-        self.energy = random.randint(24, 258)
+        self.energy = energy
     
     def init_from_dict(d=None):
         substrate = Substrate(0,0)
@@ -114,16 +114,34 @@ class Mycelium:
         self.growth_rate = growth_rate
         
         
-    def initialize(self):
-        self.substrates = self.create_initial_substrates(20)
-        for substrate in self.substrates:
-            self.graph.add_node(substrate.id, **vars(substrate))
+    def initialize_spores(self):
         self.spores =  self.create_initial_spores(5)
         for spore in self.spores:
             self.graph.add_node(spore.id, **vars(spore))
         for spore in self.spores:
             self.link_close_spores(spore)
             
+    def initialize_substrates(self):
+        self.substrates = self.create_initial_substrates(20)
+        for substrate in self.substrates:
+            self.graph.add_node(substrate.id, **vars(substrate))
+    
+    def set_spores(self, spores: List[Spore]):
+        self.spores = [
+            Spore(spore.position.x, spore.position.y, spore.energy) 
+            for spore in spores
+            ]  
+        for spore in self.spores:
+            self.graph.add_node(spore.id, **vars(spore))
+        for spore in self.spores:
+            self.link_close_spores(spore)
+    
+    def set_substrates(self, substrates: List[Substrate]):
+        self.substrates = [
+            Substrate(substrate.position.x, substrate.position.y, substrate.energy) 
+            for substrate in substrates]  
+        for substrate in self.substrates:
+            self.graph.add_node(substrate.id, **vars(substrate))
             
     def decide_multiply_direction(self, spore: Spore):
         # Get the positions of all linked spores
@@ -290,12 +308,42 @@ def decide_donate_energy(spore: Spore, mycelium: Mycelium):
             energy_signal = EnergySignal(signal.target, spore.energy_cost_to_multiply, signal.passing_through, higher_priority_signal.id)
             mycelium.pass_energy(spore, energy_signal)    
 
+def process_start_phase():
+    initial_environment = Environment(initial_temperature, initial_humidity)
+    mycelium = Mycelium(initial_environment)
+    mycelium.initialize_substrates()
+    return mycelium
 
+def process_phase(nodes: List[Spore | Substrate]):
+    initial_environment = Environment(initial_temperature, initial_humidity)
+    mycelium = Mycelium(initial_environment)
 
-def run_mycelium_simulation():
+    substrates = [node for node in nodes if node.type == "substrate"]
+    mycelium.set_substrates(substrates)
+    
+    spores = [node for node in nodes if node.type == "spore"]
+    mycelium.set_spores(spores)
+    
+    for _ in range(steps):
+        for spore in mycelium.get_spores():
+            mycelium.consume_spore_energy(spore)
+            check_decaying_state(spore, mycelium)
+            if spore.energy <= 0:
+                mycelium.kill_spore(spore)
+            if len(spore.passing_signals) > 0:
+                decide_donate_energy(spore, mycelium)
+        mycelium.multiply_spores()
+        print(sum([spore.energy for spore in mycelium.get_substrates()]))
+    
+    return mycelium
+    
+    
+
+def process_mycelium_simulation():
     initial_environment = Environment(initial_temperature, initial_humidity)
     mycelium = Mycelium(initial_environment)                 
-    mycelium.initialize()
+    mycelium.initialize_spores()
+    mycelium.initialize_substrates()
 
 
     for _ in range(steps):

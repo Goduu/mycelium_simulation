@@ -1,32 +1,34 @@
-import { Item } from '@/client'
 import { FC } from 'react'
+import { Node } from './GraphPlotter'
 
 type ItemTooltipProps = {
-    item: Item | undefined
+    item: Node | undefined
 }
 
 export const ItemTooltip: FC<ItemTooltipProps> = ({ item }) => {
     return (
-        <div className="fixed top-0 sm:top-4 flex justify-center left-1/2 transform -translate-x-1/2">
-            <div
-                className="flex justify-between px-8 relative flex-col rounded-xl border dark:backdrop-blur-xl p-4"
-            >
-                <div className='w-full truncate justify-center flex flex-col'>
-                    {item &&
-                        <>
-                            <p className='truncate w-48 flex gap-2 text-lg'>
-                                {item.name}
-                            </p>
-                            <p className='truncate w-48 flex gap-2 text-lg'>
-                                $ {item.price}</p>
-                            <p className='truncate w-48 flex gap-2 text-lg'>
-                                {item.weight} kg</p>
-                        </>
-                    }
+        <div className={`${!item ? "hidden " : "block"}`}>
+
+            <div className={`fixed top-0 sm:top-4 flex justify-center left-1/2 transform -translate-x-1/2  `}>
+                <div
+                    className="flex justify-between relative flex-col rounded-xl border dark:backdrop-blur-xl p-4"
+                >
+                    <div className='w-full truncate justify-center flex flex-col'>
+                        {item &&
+                            <>
+                                <p className='truncate w-36 flex gap-2 text-lg'>
+                                    Type: {item.type}
+                                </p>
+                                <p className='truncate w-36 flex gap-2 text-lg'>
+                                    Energy: {item.energy.toFixed(2)}</p>
+                                Position: {item.position.x.toFixed(2)}, {item.position.y.toFixed(2)}
+                            </>
+                        }
+                    </div>
+
                 </div>
 
-            </div>
-
-        </div >
+            </div >
+        </div>
     )
 }

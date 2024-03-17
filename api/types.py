@@ -25,3 +25,12 @@ class EvolutionaryInput(BaseModel):
     generations: int
     max_items_from_each: int
     
+class Position(BaseModel):
+    x: float
+    y: float
+class Node(BaseModel):
+    id: str
+    position: Position
+    type: str
+    energy: float
+    

@@ -1,11 +1,8 @@
-import GraphPlotter from "../GraphPlotter";
+import GraphPlotter from "../../src/components/GraphPlotter";
 
 const AlgorithmPage = () => {
     return (
-        <div>
-            <h1>Graph Plotter</h1>
-            <GraphPlotter />
-        </div>
+        <GraphPlotter />
     );
 }
 

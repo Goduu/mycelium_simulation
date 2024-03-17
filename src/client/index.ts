@@ -10,7 +10,8 @@ export type { OpenAPIConfig } from './core/OpenAPI';
 export type { EvolutionaryInput } from './models/EvolutionaryInput';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { Item } from './models/Item';
-export type { ResponseMessage } from './models/ResponseMessage';
+export type { Node } from './models/Node';
+export type { Position } from './models/Position';
 export type { ValidationError } from './models/ValidationError';
 
 export { DefaultService } from './services/DefaultService';
