@@ -7,9 +7,10 @@ from typing import Set,List
 import copy
 import networkx as nx
 
+from api.types import FieldSize
+
 Position = namedtuple("Position", ["x", "y"])
-steps = 30
-max_dist_to_link = 1.5
+steps = 10
 initial_temperature = 20  # Initial temperature (in Celsius)
 initial_humidity = 70     # Initial humidity (in percentage)
 
@@ -88,12 +89,15 @@ class Substrate:
         return hash(self.id)
 
 class Environment:
-    def __init__(self, temperature, humidity):
+    def __init__(self,field_size: FieldSize, temperature, humidity):
+        self.field_size = field_size 
+        self.x_range = field_size.width / 20
+        self.y_range = field_size.height / 20
         self.temperature = temperature
         self.humidity = humidity
         
 class Mycelium:
-    def __init__(self,initial_environment):
+    def __init__(self,initial_environment: Environment):
         self.graph = nx.Graph()
         self.environment = initial_environment
         self.growth_rate = 0.4
@@ -146,9 +150,11 @@ class Mycelium:
     def decide_multiply_direction(self, spore: Spore):
         # Get the positions of all linked spores
         linked_spores = self.get_linked_spores(spore)
+        x_range = self.environment.x_range
+        y_range = self.environment.y_range
         if not linked_spores or random.random() > 0.7:
-            new_x = spore.position.x + random.uniform(-2.5, 2.5)
-            new_y = spore.position.y + random.uniform(-2.5, 2.5)
+            new_x = max(0.5, min(spore.position.x + random.uniform(-x_range, x_range), self.environment.field_size.width - 0.5))
+            new_y = max(0.5, min(spore.position.y + random.uniform(-y_range, y_range), self.environment.field_size.height - 0.5))
         else: 
             new_x = sum([spore.position.x for spore in linked_spores]) // len(linked_spores)
             new_y = sum([spore.position.y for spore in linked_spores]) // len(linked_spores)
@@ -180,10 +186,12 @@ class Mycelium:
         return [ self.get_spore_by_id(neighbor) for neighbor in self.graph.neighbors(spore.id) if  self.graph.nodes[neighbor]["type"] == "spore" ]
 
     def create_initial_spores(self, n: int):
-        return [Spore(random.randint(0, 19), random.randint(0, 19)) for _ in range(n)]
+        field_sizes = self.environment.field_size
+        return [Spore(0.5 + random.random() * field_sizes.width-1,0.5 +  random.random() * field_sizes.height-1) for _ in range(n)]
 
     def create_initial_substrates(self, n: int):
-        return [Substrate(random.randint(0, 19), random.randint(0, 19)) for _ in range(n)]
+        field_sizes = self.environment.field_size
+        return [Substrate(0.5 + random.random() * field_sizes.width-1,0.5 +  random.random() * field_sizes.height-1) for _ in range(n)]
 
     def consume_spore_energy(self, spore: Spore):
         spore.energy -= 1
@@ -248,11 +256,13 @@ class Mycelium:
                 self.link_close_spores(new_spore)
     
     def link_close_spores(self, new_spore: Spore):
+        x_range = self.environment.x_range
+        y_range = self.environment.y_range
         for node, data in self.graph.nodes(data=True):
             if node != new_spore.id:
                 distance = math.sqrt((new_spore.position.x - data['position'].x) ** 2 +
                                     (new_spore.position.y - data['position'].y) ** 2)
-                if distance <= max_dist_to_link:
+                if distance <= (x_range+y_range)/2:
                     self.graph.add_edge(node, new_spore.id)
 
     class Spore:
@@ -308,14 +318,14 @@ def decide_donate_energy(spore: Spore, mycelium: Mycelium):
             energy_signal = EnergySignal(signal.target, spore.energy_cost_to_multiply, signal.passing_through, higher_priority_signal.id)
             mycelium.pass_energy(spore, energy_signal)    
 
-def process_start_phase():
-    initial_environment = Environment(initial_temperature, initial_humidity)
+def process_start_phase(fieldSize: FieldSize):
+    initial_environment = Environment(fieldSize, initial_temperature, initial_humidity)
     mycelium = Mycelium(initial_environment)
     mycelium.initialize_substrates()
     return mycelium
 
-def process_phase(nodes: List[Spore | Substrate]):
-    initial_environment = Environment(initial_temperature, initial_humidity)
+def process_phase(field_size: FieldSize, nodes: List[Spore | Substrate]):
+    initial_environment = Environment(field_size, initial_temperature, initial_humidity)
     mycelium = Mycelium(initial_environment)
 
     substrates = [node for node in nodes if node.type == "substrate"]
@@ -333,7 +343,6 @@ def process_phase(nodes: List[Spore | Substrate]):
             if len(spore.passing_signals) > 0:
                 decide_donate_energy(spore, mycelium)
         mycelium.multiply_spores()
-        print(sum([spore.energy for spore in mycelium.get_substrates()]))
     
     return mycelium
     

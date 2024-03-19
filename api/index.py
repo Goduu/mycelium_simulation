@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
 from api.graph import process_mycelium_simulation, process_phase, process_start_phase
 from api.run_evolutionary_algorithm import run_evolutionary_algorithm
-from api.types import EvolutionaryInput, Item, Node
+from api.types import EvolutionaryInput, FieldSize, Item, Node, RunPhaseInput
 from typing import List
 
 app = FastAPI()
@@ -63,9 +63,9 @@ async def get_graph():
         }
     }
     
-@app.get("/start_phase")
-async def start_phase():
-    mycelium = process_start_phase()
+@app.post("/api/start_phase")
+async def start_phase(fieldSize: FieldSize):
+    mycelium = process_start_phase(fieldSize)
     graph = mycelium.graph
     nodes = list(graph.nodes(data=True))
     
@@ -81,8 +81,8 @@ async def start_phase():
     }
 
 @app.post("/api/run_phase")
-async def run_phase(input: List[Node]):
-    mycelium = process_phase(input)
+async def run_phase(input: RunPhaseInput):
+    mycelium = process_phase(input.field_size, input.nodes)
     graph = mycelium.graph
     nodes = list(graph.nodes(data=True))
     edges = list(graph.edges())
@@ -94,7 +94,6 @@ async def run_phase(input: List[Node]):
         edges_obj["source"] = {'x': source_pos[0], 'y': source_pos[1]}
         edges_obj["target"] = {'x': target_pos[0], 'y': target_pos[1]}
         edges_list.append(edges_obj)
-    
     return {
         "nodes": [{
             "id": node[1]["id"],

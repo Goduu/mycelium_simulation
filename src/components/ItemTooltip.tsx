@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Node } from './GraphPlotter'
+import { Node } from './mycelium/types'
 
 type ItemTooltipProps = {
     item: Node | undefined

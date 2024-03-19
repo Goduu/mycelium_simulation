@@ -3,8 +3,9 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { EvolutionaryInput } from '../models/EvolutionaryInput';
+import type { FieldSize } from '../models/FieldSize';
 import type { Item } from '../models/Item';
-import type { Node } from '../models/Node';
+import type { RunPhaseInput } from '../models/RunPhaseInput';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -45,10 +46,19 @@ export class DefaultService {
      * @returns any Successful Response
      * @throws ApiError
      */
-    public static startPhaseStartPhaseGet(): CancelablePromise<any> {
+    public static startPhaseApiStartPhasePost({
+        requestBody,
+    }: {
+        requestBody: FieldSize,
+    }): CancelablePromise<any> {
         return __request(OpenAPI, {
-            method: 'GET',
-            url: '/start_phase',
+            method: 'POST',
+            url: '/api/start_phase',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: `Validation Error`,
+            },
         });
     }
     /**
@@ -59,7 +69,7 @@ export class DefaultService {
     public static runPhaseApiRunPhasePost({
         requestBody,
     }: {
-        requestBody: Array<Node>,
+        requestBody: RunPhaseInput,
     }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',

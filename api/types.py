@@ -34,3 +34,10 @@ class Node(BaseModel):
     type: str
     energy: float
     
+class FieldSize(BaseModel):
+    width: float
+    height: float
+    
+class RunPhaseInput(BaseModel):
+    nodes: List[Node]
+    field_size: FieldSize

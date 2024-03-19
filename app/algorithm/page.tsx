@@ -1,4 +1,4 @@
-import GraphPlotter from "../../src/components/GraphPlotter";
+import GraphPlotter from "../../src/components/mycelium/GraphPlotter";
 
 const AlgorithmPage = () => {
     return (
