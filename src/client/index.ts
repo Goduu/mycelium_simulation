@@ -11,6 +11,7 @@ export type { EvolutionaryInput } from './models/EvolutionaryInput';
 export type { FieldSize } from './models/FieldSize';
 export type { HTTPValidationError } from './models/HTTPValidationError';
 export type { Item } from './models/Item';
+export type { NewPhaseInput } from './models/NewPhaseInput';
 export type { Node } from './models/Node';
 export type { Position } from './models/Position';
 export type { RunPhaseInput } from './models/RunPhaseInput';

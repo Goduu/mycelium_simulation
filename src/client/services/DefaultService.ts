@@ -3,8 +3,8 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { EvolutionaryInput } from '../models/EvolutionaryInput';
-import type { FieldSize } from '../models/FieldSize';
 import type { Item } from '../models/Item';
+import type { NewPhaseInput } from '../models/NewPhaseInput';
 import type { RunPhaseInput } from '../models/RunPhaseInput';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -49,7 +49,7 @@ export class DefaultService {
     public static startPhaseApiStartPhasePost({
         requestBody,
     }: {
-        requestBody: FieldSize,
+        requestBody: NewPhaseInput,
     }): CancelablePromise<any> {
         return __request(OpenAPI, {
             method: 'POST',

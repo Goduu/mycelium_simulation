@@ -7,6 +7,7 @@ import { MyceliumField } from "./MyceliumField";
 import { useFieldSize } from "./useFieldSize";
 import { error } from "console";
 import { AiOutlineLoading3Quarters } from "../Icons";
+import { ShopSideBar } from "./ShopSideBar";
 
 
 const maxSpores = 5
@@ -16,15 +17,17 @@ const GraphPlotter: FC = () => {
     const [markers, setMarkers] = useState<Node[]>([])
     const { fieldSize } = useFieldSize()
     const [loading, setLoading] = useState(false)
+    const [phase, setPhase] = useState(1)
 
     const handleStartPhase = async () => {
         setLoading(true)
         DefaultService.startPhaseApiStartPhasePost({
-            requestBody: { ...fieldSize }
+            requestBody: { field_size: { ...fieldSize }, phase: phase }
         }).then(data => {
             setGraphData(data)
             console.log("Graph data:", data);
             setLoading(false)
+            setPhase(phase + 1)
         }).catch(error => {
             console.error("Error fetching graph data:", error);
             setLoading(false)
@@ -60,6 +63,7 @@ const GraphPlotter: FC = () => {
                 <Button onClick={handleRunPhase}>
                     Run Phase
                 </Button>
+                {(graphData?.reward || 0).toFixed(2)}
             </div>
             <div>Spores left: {maxSpores - markers.length}</div>
             <MyceliumField markers={markers} setMarkers={setMarkers} maxSpores={maxSpores} graphData={graphData} setGraphData={setGraphData} />
@@ -68,7 +72,6 @@ const GraphPlotter: FC = () => {
                     <div className="animate-spin w-16"><AiOutlineLoading3Quarters className='fill-current' /></div>
                 </div>
             )}
-
         </div >
     )
 };

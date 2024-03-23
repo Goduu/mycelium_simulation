@@ -16,4 +16,10 @@ export type Edge = {
 export type GraphData = {
     nodes: Node[];
     edges: Edge[];
+    reward: number
+}
+
+export type BagItem = {
+    id: string,
+    quantity: number
 }

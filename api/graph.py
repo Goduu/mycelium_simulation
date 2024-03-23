@@ -7,7 +7,7 @@ from typing import Set,List
 import copy
 import networkx as nx
 
-from api.types import FieldSize
+from api.types import FieldSize, Phase
 
 Position = namedtuple("Position", ["x", "y"])
 steps = 10
@@ -74,6 +74,11 @@ class Substrate:
         self.type = "substrate"
         self.position = Position(x, y)
         self.energy = energy
+        
+    def adjust_position_to_field(self, field_size: FieldSize):
+        new_x = self.position.x / 10 * field_size.width
+        new_y = self.position.y / 10 * field_size.height
+        self.position = Position(new_x, new_y)
     
     def init_from_dict(d=None):
         substrate = Substrate(0,0)
@@ -101,6 +106,10 @@ class Mycelium:
         self.graph = nx.Graph()
         self.environment = initial_environment
         self.growth_rate = 0.4
+        self.reward = 0
+        
+    def calculate_reward(self, step, initial_energy):
+        self.reward += sum([spore.energy + step for spore in self.get_spores()])  / initial_energy
         
     def update_environment(self, temperature_change, humidity_change):
         self.environment.temperature += temperature_change
@@ -318,10 +327,13 @@ def decide_donate_energy(spore: Spore, mycelium: Mycelium):
             energy_signal = EnergySignal(signal.target, spore.energy_cost_to_multiply, signal.passing_through, higher_priority_signal.id)
             mycelium.pass_energy(spore, energy_signal)    
 
-def process_start_phase(fieldSize: FieldSize):
+def process_start_phase(fieldSize: FieldSize, phase: Phase):
     initial_environment = Environment(fieldSize, initial_temperature, initial_humidity)
+    substrates = phase.substrates  
+    for substrate in substrates:  
+        substrate.adjust_position_to_field(fieldSize)
     mycelium = Mycelium(initial_environment)
-    mycelium.initialize_substrates()
+    mycelium.set_substrates(phase.substrates)
     return mycelium
 
 def process_phase(field_size: FieldSize, nodes: List[Spore | Substrate]):
@@ -333,8 +345,9 @@ def process_phase(field_size: FieldSize, nodes: List[Spore | Substrate]):
     
     spores = [node for node in nodes if node.type == "spore"]
     mycelium.set_spores(spores)
+    initial_energy = sum([node.energy for node in nodes])
     
-    for _ in range(steps):
+    for step in range(steps):
         for spore in mycelium.get_spores():
             mycelium.consume_spore_energy(spore)
             check_decaying_state(spore, mycelium)
@@ -343,6 +356,7 @@ def process_phase(field_size: FieldSize, nodes: List[Spore | Substrate]):
             if len(spore.passing_signals) > 0:
                 decide_donate_energy(spore, mycelium)
         mycelium.multiply_spores()
+        mycelium.calculate_reward(step,initial_energy)
     
     return mycelium
     
@@ -355,7 +369,7 @@ def process_mycelium_simulation():
     mycelium.initialize_substrates()
 
 
-    for _ in range(steps):
+    for step in range(steps):
         for spore in mycelium.get_spores():
             mycelium.consume_spore_energy(spore)
             check_decaying_state(spore, mycelium)

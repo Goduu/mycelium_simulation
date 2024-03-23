@@ -38,6 +38,14 @@ class FieldSize(BaseModel):
     width: float
     height: float
     
+class Phase:
+    def __init__(self, substrates):
+        self.substrates = substrates
+
+class NewPhaseInput(BaseModel):
+    field_size: FieldSize
+    phase: int
+    
 class RunPhaseInput(BaseModel):
     nodes: List[Node]
     field_size: FieldSize

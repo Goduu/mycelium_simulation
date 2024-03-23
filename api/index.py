@@ -2,9 +2,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
+from api.phases import phases
 from api.graph import process_mycelium_simulation, process_phase, process_start_phase
 from api.run_evolutionary_algorithm import run_evolutionary_algorithm
-from api.types import EvolutionaryInput, FieldSize, Item, Node, RunPhaseInput
+from api.types import EvolutionaryInput, FieldSize, Item, NewPhaseInput, Node, RunPhaseInput
 from typing import List
 
 app = FastAPI()
@@ -64,11 +65,12 @@ async def get_graph():
     }
     
 @app.post("/api/start_phase")
-async def start_phase(fieldSize: FieldSize):
-    mycelium = process_start_phase(fieldSize)
+async def start_phase(input: NewPhaseInput):
+    field_size = input.field_size
+    phase = phases.get(str(input.phase))
+    mycelium = process_start_phase(field_size, phase)
     graph = mycelium.graph
     nodes = list(graph.nodes(data=True))
-    
         
     return {
         "nodes": [{
@@ -102,6 +104,7 @@ async def run_phase(input: RunPhaseInput):
             "energy": node[1]["energy"],
             } for node in nodes],
         "edges": edges_list,
+        "reward": mycelium.reward
     }
     
 
