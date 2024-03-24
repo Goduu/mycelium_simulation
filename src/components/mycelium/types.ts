@@ -23,3 +23,5 @@ export type BagItem = {
     id: string,
     quantity: number
 }
+
+export type Stage = "buy" | "place" | "result" | "new"

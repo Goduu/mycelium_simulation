@@ -2,12 +2,12 @@
 import { Button } from "@/components/Button";
 import { FC, useState } from "react";
 import { DefaultService } from "@/client";
-import { GraphData, Node } from "./types";
+import { BagItem, GraphData, Node, Stage } from "./types";
 import { MyceliumField } from "./MyceliumField";
 import { useFieldSize } from "./useFieldSize";
-import { error } from "console";
 import { AiOutlineLoading3Quarters } from "../Icons";
-import { ShopSideBar } from "./ShopSideBar";
+import { Bag } from "./Bag";
+import { StageButtons } from "./PhaseButtons";
 
 
 const maxSpores = 5
@@ -18,6 +18,9 @@ const GraphPlotter: FC = () => {
     const { fieldSize } = useFieldSize()
     const [loading, setLoading] = useState(false)
     const [phase, setPhase] = useState(1)
+    const [bagItems, setBagItems] = useState<BagItem[]>([])
+    const [reward, setReward] = useState(0)
+    const [stage, setStage] = useState<Stage>("buy")
 
     const handleStartPhase = async () => {
         setLoading(true)
@@ -25,6 +28,7 @@ const GraphPlotter: FC = () => {
             requestBody: { field_size: { ...fieldSize }, phase: phase }
         }).then(data => {
             setGraphData(data)
+            setReward(data.reward || 0)
             console.log("Graph data:", data);
             setLoading(false)
             setPhase(phase + 1)
@@ -65,6 +69,8 @@ const GraphPlotter: FC = () => {
                 </Button>
                 {(graphData?.reward || 0).toFixed(2)}
             </div>
+            <StageButtons stage={stage} setStage={setStage} />
+            <Bag bagItems={bagItems} reward={reward + 1} stage={stage} />
             <div>Spores left: {maxSpores - markers.length}</div>
             <MyceliumField markers={markers} setMarkers={setMarkers} maxSpores={maxSpores} graphData={graphData} setGraphData={setGraphData} />
             {loading && (

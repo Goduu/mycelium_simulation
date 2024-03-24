@@ -1,5 +1,6 @@
 import { FC } from 'react'
 import { Node } from './mycelium/types'
+import { MdOutlineEnergySavingsLeaf, MdOutlineLocationOn } from './Icons'
 
 type ItemTooltipProps = {
     item: Node | undefined
@@ -16,12 +17,15 @@ export const ItemTooltip: FC<ItemTooltipProps> = ({ item }) => {
                     <div className='w-full truncate justify-center flex flex-col'>
                         {item &&
                             <>
-                                <p className='truncate w-36 flex gap-2 text-lg'>
+                                <p className='truncate w-40 flex gap-2 text-lg'>
                                     Type: {item.type}
                                 </p>
-                                <p className='truncate w-36 flex gap-2 text-lg'>
-                                    Energy: {item.energy.toFixed(2)}</p>
-                                Position: {item.position.x.toFixed(2)}, {item.position.y.toFixed(2)}
+                                <p className='truncate w-40 flex gap-2 text-lg'>
+                                    <MdOutlineEnergySavingsLeaf className="w-5" /> {item.energy.toFixed(2)}
+                                </p>
+                                <p className='truncate w-40 flex gap-2 text-lg'>
+                                    <MdOutlineLocationOn className='w-5' /> {item.position.x.toFixed(2)}, {item.position.y.toFixed(2)}
+                                </p>
                             </>
                         }
                     </div>
