@@ -1,11 +1,9 @@
 "use client"
 import React, { FC, useRef, useState } from 'react'
-import { BagItem, GraphData, Node } from './types'
+import { GraphData, Node, Stage } from './types'
 import { ItemTooltip } from '../ItemTooltip'
 import { useFieldSize } from './useFieldSize'
-import { BiDna, BiDnaPath } from '../Icons'
 import { SporeNode } from './Spore'
-import { ShopWindow } from './ShopWindow'
 
 
 export type MyceliumFieldProps = {
@@ -13,17 +11,19 @@ export type MyceliumFieldProps = {
     markers: Node[];
     setMarkers: (markers: Node[]) => void;
     graphData: GraphData | null;
-    setGraphData: (markers: GraphData | null) => void;
+    stage: Stage
 }
 
-export const MyceliumField: FC<MyceliumFieldProps> = ({ markers, setMarkers, maxSpores, graphData, setGraphData }) => {
+export const MyceliumField: FC<MyceliumFieldProps> = ({ markers, setMarkers, maxSpores, stage, graphData }) => {
     const [hoveredItem, setHoveredItem] = useState<Node>()
-    const [shopVisible, setShopVisible] = useState(false)
-    const [bagItems, setBagItems] = useState<BagItem[]>([])
     const svgRef = useRef<SVGSVGElement>(null);
     const { fieldSize } = useFieldSize()
 
     const handleClick = (event: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+        if (stage !== "place") {
+            return
+        }
+
         const svgRect = svgRef.current?.getBoundingClientRect();
         const svgLeft = svgRect?.left ?? 0;
         const svgTop = svgRect?.top ?? 0;
@@ -86,7 +86,6 @@ export const MyceliumField: FC<MyceliumFieldProps> = ({ markers, setMarkers, max
                 }
             </svg >
             <ItemTooltip item={hoveredItem} />
-            {/* <ShopWindow reward={graphData?.reward || 0} visible={shopVisible} setVisible={setShopVisible} bagItems={bagItems} setBagItems={setBagItems} /> */}
         </div>
     )
 }

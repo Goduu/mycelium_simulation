@@ -11,7 +11,7 @@ export const Header: FC = () => {
       <Link href="/" aria-label="Introduction" className='flex gap-4 items-center'>
         <Image src={logo} width={50} height={50} alt="A representation of a DNA" />
         <div className="text-2xl md:text-4xl font-semibold sm:block">
-          Evolutionary Algorithm
+          Mycelium Simulation
         </div>
       </Link>
       <div className="flex items-center space-x-4 leading-5 sm:space-x-6">

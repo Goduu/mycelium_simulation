@@ -2,7 +2,7 @@
 
 
 import React, { FC } from 'react'
-import { Node } from './types';
+import { Node, SporeShopItem } from './types';
 import { TbCircleFilled } from '../Icons';
 
 export type SporeNodeProps = {
@@ -61,7 +61,8 @@ const getSporeColorByEnergy = (energy: number) => {
     }
     return "text-[#4c0099]"
 }
-export const sporeShop = [
+
+export const sporeShop: SporeShopItem[] = [
     {
         id: "sporeSmall",
         name: "Small Spore",

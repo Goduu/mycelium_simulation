@@ -1,8 +1,8 @@
 "use client"
 import { Button } from "@/components/Button";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { DefaultService } from "@/client";
-import { BagItem, GraphData, Node, Stage } from "./types";
+import { BagItem, GraphData, ItemId, Node, Stage } from "./types";
 import { MyceliumField } from "./MyceliumField";
 import { useFieldSize } from "./useFieldSize";
 import { AiOutlineLoading3Quarters } from "../Icons";
@@ -20,7 +20,8 @@ const GraphPlotter: FC = () => {
     const [phase, setPhase] = useState(1)
     const [bagItems, setBagItems] = useState<BagItem[]>([])
     const [reward, setReward] = useState(0)
-    const [stage, setStage] = useState<Stage>("buy")
+    const [stage, setStage] = useState<Stage>("new")
+    const [itemToPlace, setItemToPlace] = useState<ItemId>()
 
     const handleStartPhase = async () => {
         setLoading(true)
@@ -28,8 +29,7 @@ const GraphPlotter: FC = () => {
             requestBody: { field_size: { ...fieldSize }, phase: phase }
         }).then(data => {
             setGraphData(data)
-            setReward(data.reward || 0)
-            console.log("Graph data:", data);
+            console.log("Graph reward:", reward + data.reward || 0);
             setLoading(false)
             setPhase(phase + 1)
         }).catch(error => {
@@ -50,6 +50,7 @@ const GraphPlotter: FC = () => {
             setMarkers([])
             setGraphData(data);
             setLoading(false)
+            setReward(reward + data.reward || 0)
         }
         ).catch(error => {
             console.error("Error fetching graph data:", error);
@@ -58,21 +59,22 @@ const GraphPlotter: FC = () => {
         })
     }
 
+    useEffect(() => {
+        if (stage === "buy") {
+            handleStartPhase()
+        }
+        if (stage === "result") {
+            handleRunPhase()
+        }
+    }, [stage])
+
+
     return (
         <div >
-            <div className="flex gap-4">
-                <Button onClick={handleStartPhase}>
-                    Start Phase
-                </Button>
-                <Button onClick={handleRunPhase}>
-                    Run Phase
-                </Button>
-                {(graphData?.reward || 0).toFixed(2)}
-            </div>
             <StageButtons stage={stage} setStage={setStage} />
-            <Bag bagItems={bagItems} reward={reward + 1} stage={stage} />
+            <Bag bagItems={bagItems} reward={reward} stage={stage} itemToPlace={itemToPlace} setItemToPlace={setItemToPlace} setBagItems={setBagItems} />
             <div>Spores left: {maxSpores - markers.length}</div>
-            <MyceliumField markers={markers} setMarkers={setMarkers} maxSpores={maxSpores} graphData={graphData} setGraphData={setGraphData} />
+            <MyceliumField stage={stage} markers={markers} setMarkers={setMarkers} maxSpores={maxSpores} graphData={graphData} />
             {loading && (
                 <div className="fixed top-0 left-0 w-screen h-screen flex items-center justify-center z-50 bg-slate-100 bg-opacity-20">
                     <div className="animate-spin w-16"><AiOutlineLoading3Quarters className='fill-current' /></div>

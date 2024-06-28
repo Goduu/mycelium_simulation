@@ -25,3 +25,13 @@ export type BagItem = {
 }
 
 export type Stage = "buy" | "place" | "result" | "new"
+
+export type ItemId = "smallSpore" | "midSpore" | "bigSpore" | "greatSpore"
+
+export type SporeShopItem = {
+    id: ItemId,
+    name: string;
+    value: number;
+    energy: number;
+    class: string;
+}
